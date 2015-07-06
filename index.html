@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+ <meta charset="utf-8" />
+ <meta name="viewport" content="width=device-width, initial-scale=1" />
+ <title>Temperature Logger</title>
+ <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+ <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
+ <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+ <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+<script type="text/javascript">
+$(document).ready( function() {
+  //get current data
+  $.getJSON("/json", function(data) {
+    $("#dstime").text(data.date+' '+data.time);
+    $("#dstemp").html('<b>'+data.temp[0]+'</b>');
+    $("#dsds").text(data.ds[0]);
+    for(var i=1; i<data.temp.length; i++) {
+	$("#dstemp").append('<br /><b>'+data.temp[i]+'</b>');
+	$("#dsds").append('<br />'+data.ds[i]);
+	}
+    $("#dsnode").html(data.node+'<br />'+data.mac);
+    $("#dsmem").text(data.mem);
+    $("#dsdisk").text(data.disk);
+    $("#dsuptime").text(data.uptime);
+    $("#dsver").text(data.ver);
+    });
+  //get history
+  $.get("/csv", function(data) {
+    var l = data.split(/\r\n|\n/);
+    for(var i=0; i<l.length; i++) if(l[i].length>2) {
+	$("table#dshist tbody").append('<tr><td>'+l[i].replace(/\;/g,'</td><td>')+'</td></tr>');
+	}
+    });
+});
+</script>
+</head>
+<body>
+<div class="page-header">
+ <h2 class="text-center text-primary">ESP8266 NodeMCU Temperature Monitor</h2> 
+</div>
+<div class="container">
+
+ <h3>ModeMCU Temperature Monitor</h3>
+ <table id="dsnow" class="table table-condensed table-striped table-bordered">
+  <tbody>
+   <tr><td>Date & Time</td><td id="dstime"></td></tr>
+   <tr><td>Temperature</td><td id="dstemp"></td></tr>
+   <tr><td>Thermometer</td><td id="dsds"></td></tr>
+   <tr><td>NodeMCU</td><td id="dsnode"></td></tr>
+   <tr><td>Mem Free</td><td id="dsmem"></td></tr>
+   <tr><td>Disk Free</td><td id="dsdisk"></td></tr>
+   <tr><td>Uptime</td><td id="dsuptime"></td></tr>
+   <tr><td>Software version</td><td id="dsver"></td></tr>
+  </tbody>
+ </table>
+ <hr />
+
+ <h3>Temperature Log</h3>
+ <table id="dshist" class="table table-condensed table-striped table-bordered">
+  <thead>
+   <tr><th>Date</th><th>Time</th><th>Temp 1</th><th>Temp 2</th></tr>
+  </thead>
+  <tbody>
+  </tbody>
+ </table>
+ <hr />
+
+ <p class="text-muted"><small>&copy;2015 WG</small></p>
+
+</div>
+</body>
+</html>
