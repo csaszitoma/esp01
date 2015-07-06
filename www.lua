@@ -33,12 +33,12 @@ if srv then
 end
 
 -- large file send thread routine based on https://github.com/marcoskirsch/nodemcu-httpserver
-function sendData(conn)
+function sendFile(conn)
     local cont = true
     local pos = 0
     local chunk = ""
     conn:send(_head)
-    while cont do
+    while cont and #_file > 0 do
 	collectgarbage()
 	file.open(_file, "r")
 	file.seek("set", pos)
@@ -72,29 +72,27 @@ srv:listen(80, function(conn)
 		buf = buf .. ",\"" .. ds.addr(i) .. "\""
 	    end
 	    buf = buf .. "]"
-	    buf="HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\n\r\n"
+	    _head = "HTTP/1.0 200 OK\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\n\r\n"
 	    .. "{" .. buf .. ",\"date\":\"" .. ntp.date()  .. "\",\"time\":\"" .. ntp.time() 
 	    .. "\",\"node\":\"" .. node.chipid() .. "\",\"mac\":\"" .. wifi.sta.getmac()
 	    .. "\",\"mem\":" .. node.heap() .. ", \"disk\":" .. file.fsinfo() .. ",\"uptime\":" .. tmr.time()
 	    .. ",\"ver\":\"" .. _ver .. "\"}"
+	    _file = ""
+	    connTh=coroutine.create(sendFile)
 	elseif string.find(request, "favicon", 1, true) then
-	    buf="HTTP/1.0 404 Not Found\r\n\r\n"
+	    _head = "HTTP/1.0 404 Not Found\r\n\r\n"
+	    _file = ""
+	    connTh=coroutine.create(sendFile)
 	elseif string.find(request, "csv", 1, true) then
 	    _file = "data.csv"
-	    _head = "HTTP/1.0 200 OK\r\nContent-Type: text/csv\r\nContent-disposition: attachment;filename=data.csv\r\n\r\n"
-	    connTh=coroutine.create(sendData)
-	    coroutine.resume(connTh,client)
-	elseif string.find(request, "html", 1, true) then
+	    _head = "HTTP/1.0 200 OK\r\nContent-Type: text/csv\r\nContent-disposition: attachment;filename=data.csv\r\n\r\nDate;Time;T1;T2\r\n"
+	    connTh=coroutine.create(sendFile)
+	else
 	    _file = "index.html"
 	    _head = "HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\n"
-	    connTh=coroutine.create(sendData)
-	    coroutine.resume(connTh,client)
-	else
-	    buf="HTTP/1.0 200 OK\r\nContent-Type: text/plain\r\n\r\n" .. ds.temp()
+	    connTh=coroutine.create(sendFile)
 	end
-	if connTh==nil then
-	    client:send(buf)
-	end
+	coroutine.resume(connTh,client)
 	-- parse parameters
 	if string.find(request, "\?") then
 	    if string.find(request, "sync=", 1, true) then

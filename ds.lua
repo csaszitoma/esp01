@@ -6,42 +6,40 @@ local modname = ...
 local M = {}
 _G[modname] = M
 
--- DS18B20 dq pin
-M.pinDQ = 3	-- 3->GPIO0, 4->GPIO2
-M.deltaT = 0
-M.addrs = {}
-
 local table = table
 local string = string
 local tmr = tmr
 local ow = ow
 setfenv(1,M)
 
+-- DS18B20 dq pin
+M.pinDQ = 3
+M.deltaT = 0
+M.addrs = {}
+
+-- get DS18B20 tempeature in 1/1000 C
 function M.get(k)
     local a, data, crc, temp
     if k == nil then k = 1 end
     a = M.addrs[k]
     if a == nil then a = M.addrs[1] end
     ow.setup(pinDQ)
-    if(ow.reset(pinDQ)) then
+    if a~=nil and ow.reset(pinDQ) then
 --	ow.select(pinDQ, a)
 --	ow.write(pinDQ, 0x44, 1)	-- start conversion
 --	tmr.delay(750000)
 --	ow.reset(pinDQ)
 	ow.select(pinDQ, a)
 	ow.write(pinDQ, 0xBE, 1)	-- read command
-	data = ""
-	for i = 1, 9 do
-	    data = data .. string.char(ow.read(pinDQ))
-	end
+	data = ow.read_bytes(pinDQ, 9)
 	-- start next conversion
 	ow.reset(pinDQ)
 	ow.skip(pinDQ)
 	ow.write(pinDQ, 0x44, 1)
 	crc = ow.crc8(string.sub(data, 1, 8))
-	if (crc == data:byte(9)) then
-	    temp = (data:byte(1) + data:byte(2) * 256)
-	    if (temp > 32767) then
+	if crc == data:byte(9) then
+	    temp = data:byte(1) + data:byte(2) * 256
+	    if temp > 32767 then
 		temp = temp - 65536
 	    end
 	    temp = temp * 625
@@ -84,10 +82,6 @@ function M.find()
 	tmr.wdclr()
     until a == nil
     ow.reset_search(pinDQ)
-    -- start conversion
-    ow.reset(pinDQ)
-    ow.skip(pinDQ)
-    ow.write(pinDQ, 0x44, 1)
 end
 
 M.find()

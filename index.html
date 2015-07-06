@@ -28,8 +28,13 @@ $(document).ready( function() {
   //get history
   $.get("/csv", function(data) {
     var l = data.split(/\r\n|\n/);
-    for(var i=0; i<l.length; i++) if(l[i].length>2) {
-	$("table#dshist tbody").append('<tr><td>'+l[i].replace(/\;/g,'</td><td>')+'</td></tr>');
+    if(l.length>0 && l[0].length>2) {
+	$("table#dshist thead").append('<tr><th>'+l[0].replace(/\;/g,'</th><th>')+'</th></tr>');
+	}
+    for(var i=1; i<l.length; i++) {
+	if(l[i].length>2) {
+	    $("table#dshist tbody").append('<tr><td>'+l[i].replace(/\;/g,'</td><td>')+'</td></tr>');
+	    }
 	}
     });
 });
@@ -41,7 +46,7 @@ $(document).ready( function() {
 </div>
 <div class="container">
 
- <h3>ModeMCU Temperature Monitor</h3>
+ <h3>NodeMCU Temperature Monitor</h3>
  <table id="dsnow" class="table table-condensed table-striped table-bordered">
   <tbody>
    <tr><td>Date & Time</td><td id="dstime"></td></tr>
@@ -59,7 +64,6 @@ $(document).ready( function() {
  <h3>Temperature Log</h3>
  <table id="dshist" class="table table-condensed table-striped table-bordered">
   <thead>
-   <tr><th>Date</th><th>Time</th><th>Temp 1</th><th>Temp 2</th></tr>
   </thead>
   <tbody>
   </tbody>
