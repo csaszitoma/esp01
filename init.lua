@@ -12,8 +12,8 @@ pwm.setup(3, 5, 16)
 pwm.start(3)
 
 -- globals
-_ver = "ESP-01-150718"
-_eesize = 8192
+_ver = "ESP-01-150720"
+_eesize = 4096
 _ee = 0
 _temp = { }
 _addr = { }
@@ -23,7 +23,7 @@ if _cfg["tz"] == nil then _cfg["tz"] = 2 end
 
 -- modules
 -- start RTC DS3231 time synchronization
-dofile("ntp.lc").sync()
+--dofile("ntp.lc").sync()
 -- find first free EEPROM address
 _ee = 0
 _ee = dofile("ee.lc").find()
@@ -45,7 +45,7 @@ dofile("ds18.lc").temp(function(r)
 --    _addr[#_addr+1] = "DS3231-" .. node.chipid()
 end)
 -- start www server and periodic record
-tmr.alarm(4, 2000, 0, function()
+tmr.alarm(0, 2000, 0, function()
     dofile("www.lc")
     dofile("cron.lc")
 end)

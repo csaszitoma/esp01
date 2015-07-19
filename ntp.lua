@@ -4,8 +4,8 @@
 -- 2015-06-12 WG
 --
 -- Example:
---   dofile("ntp.lua").sync(function(utc) _start=utc-tmr.time() end)
--- This module uses NodeMCU timer 2 in :sync()
+--   dofile("ntp.lua").sync()
+-- This module uses NodeMCU timer 4 in :sync()
 local M
 do
 -- globals
@@ -43,18 +43,18 @@ end
 -- get date & time
 -- Return: h, n, s, y, m, d, w
 local function get()
-    return unix2date(tmr.time() + _start + _cfg["tz"]*3600)
+    return unix2date(tmr.now()/1000000 + _start + _cfg["tz"]*3600)
 end
 
 -- set RTC time from date
 local function set(h,n,s,y,m,d,w)
-    _start = date2unix(h,n,s,y,m,d,w) - tmr.time() - _cfg["tz"]*3600
+    _start = date2unix(h,n,s,y,m,d,w) - tmr.now()/1000000 - _cfg["tz"]*3600
 end
 
 -- RTC time string
 local function time()
     local t, h, m, s
-    t = tmr.time() + _start + _cfg["tz"]*3600
+    t = tmr.now()/1000000 + _start + _cfg["tz"]*3600
     h = t % 86400 / 3600
     m = t % 3600 / 60
     s = t % 60
@@ -70,16 +70,15 @@ end
 
 -- RTC unix epoch time
 local function timestamp()
-    return tmr.time() + _start
+    return tmr.now()/1000000 + _start
 end
 
 -- set NodeMCU start time from NTP server
-local function sync(callback, srv)
+local function sync()
     if wifi.sta.status() ~= 5 then
-	tmr.alarm(2, 3000, 0, sync)
+--	tmr.alarm(4, 3000, 0, function() sync() end)
 	return
     end
-    if srv == nil then srv = _cfg["ntpserver"] end
     local request=string.char(227, 0, 6, 236, 0,0,0,0,0,0,0,0, 49, 78, 49, 52, 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0)
     sk=net.createConnection(net.UDP, 0)
     sk:on("receive", function(sck, payload)
@@ -89,14 +88,12 @@ local function sync(callback, srv)
 	lw = payload:byte(43) * 256 + payload:byte(44)
 	utc = hw * 65536 + lw - 1104494400 - 1104494400
 	if utc > 1420000000 then
-	    _start = utc - tmr.time()
-	    if callback ~= nil then callback(utc) end
+	    _start = utc - tmr.now()/1000000
 	end
 	sk:close()
     end)
-    sk:connect(123, srv)
+    sk:connect(123, _cfg["ntpserver"])
     sk:send(request)
-    tmr.alarm(2, 3000, 0, function() if sk ~= nil then sk:close() sk=nil end end)
 end
 
 -- export functions

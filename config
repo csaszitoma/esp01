@@ -1,1 +1,1 @@
-{ "ssid":"WG", "pwd":"voytek66", "tz":2, "rec":15, "host":"guminski.net", "uri":"/iot/iot.php", "slp":0, "ntpserver":"192.168.16.1", "dt":[0,0] }
+{ "ssid":"WG", "pwd":"voytek66", "tz":2, "rec":3, "host":"guminski.net", "uri":"/iot/iot.php", "slp":0, "ntpserver":"192.168.16.1", "dt":[0,0] }

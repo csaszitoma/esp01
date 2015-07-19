@@ -40,6 +40,10 @@ srv:listen(80, function(conn)
     conn:on("receive", function(client, request)
 	collectgarbage()
 	local buf = ""
+	-- parse parameters
+	if string.find(request, "\?") then
+	    dofile("config.lc").decode(request)
+	end
 	if string.find(request, "/cfg", 1, true) then
 	    file.open("config", "r")
 	    buf = file.read(1400)
@@ -48,18 +52,9 @@ srv:listen(80, function(conn)
 	    .. buf
 	    conn:send(buf)
 	elseif string.find(request, "/json", 1, true) then
-	    buf = "\"t\":[" .. string.format("%d.%d", (_temp[1]+50)/1000, (_temp[1]+50)%1000/100)
-	    for i=2,#_temp do
-		buf = buf .. "," .. string.format("%d.%d", (_temp[i]+50)/1000, (_temp[i]+50)%1000/100)
-	    end
-	    buf = buf .. "],\"a\":" .. cjson.encode(_addr)
---	    buf = buf .. "],\"a\":[\"" .. _addr[1] .. "\""
---	    for i=2,#_addr do
---		buf = buf .. ",\"" .. _addr[i] .. "\""
---	    end
---	    buf = buf .. "]"
 	    buf = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nAccess-Control-Allow-Origin: *\r\n\r\n"
-	    .. "{" .. buf .. ",\"date\":\"" .. dofile("ntp.lc").date()  .. "\",\"time\":\"" .. dofile("ntp.lc").time()
+	    .. "{" .. "\"t\":" .. cjson.encode(_temp) .. ",\"a\":" .. cjson.encode(_addr) 
+	    .. ",\"date\":\"" .. dofile("ntp.lc").date()  .. "\",\"time\":\"" .. dofile("ntp.lc").time()
 	    .. "\",\"node\":\"" .. node.chipid() .. "\",\"mac\":\"" .. wifi.sta.getmac()
 	    .. "\",\"mem\":" .. node.heap() .. ", \"disk\":" .. (_eesize-_ee) .. ",\"uptime\":" .. tmr.time()
 	    .. ",\"ver\":\"" .. _ver .. "\"}"
@@ -68,7 +63,13 @@ srv:listen(80, function(conn)
 	    buf = "HTTP/1.1 404 Not Found\r\n\r\n"
 	    conn:send(buf)
 	elseif string.find(request, "/ee", 1, true) then
-	    local a = _ee - 1024
+	    local a
+	    a, a, buf = string.find(request, "ee=(%d+)") 
+	    if buf ~= nil and tonumber(buf) >= 0 then
+		a = tonumber(buf)
+	    else
+		a = _ee - 1024
+	    end
 	    if a < 0 then a = 0 end
 	    buf = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n"  .. crypto.toBase64(dofile("ee.lc").read(a, 1024))
 	    a = nil
@@ -76,10 +77,6 @@ srv:listen(80, function(conn)
 	elseif string.find(request, "/config", 1, true) then
 	    _file = "config.html"
 	    _head = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n"
-	    connTh = coroutine.create(sendFile)
-	elseif string.find(request, "/csv", 1, true) then
-	    _file = "data.csv"
-	    _head = "HTTP/1.1 200 OK\r\nContent-Type: text/csv\r\nContent-disposition: attachment;filename=data.csv\r\n\r\n"
 	    connTh = coroutine.create(sendFile)
 	else
 --	    if string.find(request, "ncoding:.*gzip") then
@@ -90,10 +87,6 @@ srv:listen(80, function(conn)
 		_head = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n"
 --	    end
 	    connTh = coroutine.create(sendFile)
-	end
-	-- parse parameters
-	if string.find(request, "\?") then
-	    dofile("config.lc").decode(request)
 	end
 	-- large file send
 	if connTh then coroutine.resume(connTh, client) end

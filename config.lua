@@ -65,13 +65,7 @@ local function decode(request)
     save()
 -- check remove data
     if string.find(request, "rm=1", 1 , true) then 
-	file.open("data.csv","w")
-	file.close()
 	dofile("ee.lc").format()
-    end
--- check copy data to csv file
-    if string.find(request, "cpy=1", 1 , true) then
-	copy()
     end
 -- check restart device
     if string.find(request, "rst=1", 1 , true) then 
@@ -80,25 +74,7 @@ local function decode(request)
     buf = nil
     _ = nil
 end
--- copy data form EEPROM to data.csv file
-local function copy()
-    local a = 0
-    local buf = ""
-    file.open("data.csv","w")
-    file.close()
-    buf = dofile("ee.lc").chunkRead(a, 512)
-    while #buf > 0 and a < (_eesize-512) do
-	file.open("data.csv","a")
-	file.write(buf)
-	file.close()
-	a = a + 512
-	buf = dofile("ee.lc").chunkRead(a, 512)
-	tmr.wdclr()
-    end
-    a = nil
-    buf = nil
-end
 -- export functions
-M = { load = load, save = save, copy = copy, decode = decode }
+M = { load = load, save = save, decode = decode }
 end
 return M

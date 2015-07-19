@@ -9,28 +9,6 @@
  <script src="https://code.jquery.com/jquery-1.11.3.min.js"></script>
  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
 <script type="text/javascript">
-function getHistory() {
-    $("#dshist").hide();
-    var gtab = [];
-    $.get("/csv", function(data) {
-	$("table#dshist tbody").html("");
-	var l = data.split(/\r\n|\n/);
-	gtab = [ ['Time', 'T1', 'T2'] ]
-	for(var i=0; i<l.length; i++) { 
-	    if(l[i].length>2) {
-		$("table#dshist tbody").append('<tr><td>'+l[i].replace(/\;/g,'</td><td>')+'</td></tr>');
-		ll = l[i].split(';');
-		gtab.push( [ ll[0].substr(5,5)+' '+ll[1].substr(0,5), parseFloat(ll[2]), parseFloat(ll[3]) ] );
-		}
-	    }
-	$("#gchart").height("400px");
-	var options = { title: 'Temperature', curveType: 'function' };
-	var gdata = google.visualization.arrayToDataTable( gtab );
-	var chart = new google.visualization.LineChart(document.getElementById('gchart'));
-	chart.draw(gdata, options);
-	getTemp();
-	});
-}
 function getShortHistory() {
     $("#dshist").hide();
     var gtab = [];
@@ -40,24 +18,25 @@ function getShortHistory() {
 	var b = atob(data);
 	var y,m,d,h,n,s,t1,t2;
 	gtab = [ ['Time', 'T1', 'T2'] ]
-	for(var i=0; i<b.length; i+=8) { 
-	    y = 2000+(b.charCodeAt(i+0) >> 1);
-	    m = ((b.charCodeAt(i+0) & 0x01) << 3) + (b.charCodeAt(i+1) >> 5);
-	    d = b.charCodeAt(i+1) & 0x1F;
-	    h = b.charCodeAt(i+2) >> 3;
-	    n = ((b.charCodeAt(i+2) & 0x07) << 3) + (b.charCodeAt(i+3) >> 5);
-	    s = (b.charCodeAt(i+3) & 0x1F) << 1;
-	    t1 = 256 * b.charCodeAt(i+4) + b.charCodeAt(i+5);
-	    if(t1>32768) t1 = t1 - 65536;
-	    t1 = t1/1000;
-	    t2 = 256 * b.charCodeAt(i+6) + b.charCodeAt(i+7);
-	    if(t2>32768) t2 = t2 - 65536;
-	    t2 = t2/1000;
-	    var dt = y.toString() + '-' + (m<10?'0':'') + m.toString() + '-' + (d<10?'0':'') + d.toString();
-	    var tm = (h<10?'0':'') + h.toString() + ':' + (n<10?'0':'') + n.toString() + ':' + (s<10?'0':'') + s.toString();
-	    $("table#dshist tbody").append('<tr><td>'+dt+'</td><td>'+tm+'</td><td>'+t1.toString()+'</td><td>'+t2.toString()+'</td></tr>');
-	    gtab.push( [ dt.substr(5,5)+' '+tm.substr(0,5), t1, t2 ] );
-	    }
+	for(var i=0; i<b.length; i+=8) 
+	    if(b.charCodeAt(i+0) != 0xFF) { 
+		y = 2000+(b.charCodeAt(i+0) >> 1);
+		m = ((b.charCodeAt(i+0) & 0x01) << 3) + (b.charCodeAt(i+1) >> 5);
+		d = b.charCodeAt(i+1) & 0x1F;
+		h = b.charCodeAt(i+2) >> 3;
+		n = ((b.charCodeAt(i+2) & 0x07) << 3) + (b.charCodeAt(i+3) >> 5);
+		s = (b.charCodeAt(i+3) & 0x1F) << 1;
+		t1 = 256 * b.charCodeAt(i+4) + b.charCodeAt(i+5);
+		if(t1>32768) t1 = t1 - 65536;
+		t1 = t1/1000;
+		t2 = 256 * b.charCodeAt(i+6) + b.charCodeAt(i+7);
+		if(t2>32768) t2 = t2 - 65536;
+		t2 = t2/1000;
+		var dt = y.toString() + '-' + (m<10?'0':'') + m.toString() + '-' + (d<10?'0':'') + d.toString();
+		var tm = (h<10?'0':'') + h.toString() + ':' + (n<10?'0':'') + n.toString() + ':' + (s<10?'0':'') + s.toString();
+		$("table#dshist tbody").append('<tr><td>'+dt+'</td><td>'+tm+'</td><td>'+t1.toString()+'</td><td>'+t2.toString()+'</td></tr>');
+		gtab.push( [ dt.substr(5,5)+' '+tm.substr(0,5), t1, t2 ] );
+		}
 	$("#gchart").height("400px");
 	var options = { title: 'Temperature', curveType: 'function' };
 	var gdata = google.visualization.arrayToDataTable( gtab );
@@ -69,10 +48,10 @@ function getShortHistory() {
 function getTemp() {
     $.getJSON("/json", function(data) {
 	$("#dstime").text(data.date+' '+data.time);
-	$("#dstemp").html('<b>'+data.t[0]+'</b>');
+	$("#dstemp").html('<b>'+(Math.round(data.t[0]/100)/10)+'</b>');
 	$("#dsds").text(data.a[0]);
 	for(var i=1; i<data.t.length; i++) {
-	    $("#dstemp").append('<br /><b>'+data.t[i]+'</b>');
+	    $("#dstemp").append('<br /><b>'+(Math.round(data.t[i]/100)/10)+'</b>');
 	    $("#dsds").append('<br />'+data.a[i]);
 	    }
 	$("#dsnode").html(data.node+'<br />'+data.mac);
@@ -85,7 +64,6 @@ function getTemp() {
 $(document).ready( function() {
     $("#tlog").click( function() { $("#dshist").toggle(); });
     $("#tshort").click(getShortHistory);
-    $("#tlong").click(getHistory);
     $("#tnow").click(getTemp);
     setTimeout(getShortHistory, 100);
 });
@@ -112,13 +90,13 @@ google.load("visualization","1",{packages:["corechart"]});
  </table>
  <hr />
  <div id="gchart" style="width:100%; height:10px;"></div>
- <button id="tlog" class="btn btn-default">Show/Hide Temperature Log</button>
+ <button id="tlog" class="btn btn-primary">Show/Hide Temperature Log</button>
  <button id="tnow" class="btn btn-default">Get current data</button>
- <button id="tshort" class="btn btn-default">Get short history log</button>
- <button id="tlong" class="btn btn-default">Get all history log</button>
- <table id="dshist" class="table table-condensed table-striped table-bordered">
+ <button id="tshort" class="btn btn-default">Get history log</button>
+ <hr />
+ <table id="dshist" class="table table-condensed table-striped table-bordered text-center">
   <thead>
-   <tr><th>Date</th><th>Time</th><th>T1</th><th>T2</th></tr>
+   <tr class="bg-info"><th>Date</th><th>Time</th><th>T1</th><th>T2</th></tr>
   </thead>
   <tbody>
   </tbody>
