@@ -27,10 +27,10 @@ function getShortHistory() {
 		n = ((b.charCodeAt(i+2) & 0x07) << 3) + (b.charCodeAt(i+3) >> 5);
 		s = (b.charCodeAt(i+3) & 0x1F) << 1;
 		t1 = 256 * b.charCodeAt(i+4) + b.charCodeAt(i+5);
-		if(t1>32768) t1 = t1 - 65536;
+		//if(t1>32768) t1 = t1 - 65536;
 		t1 = t1/1000;
 		t2 = 256 * b.charCodeAt(i+6) + b.charCodeAt(i+7);
-		if(t2>32768) t2 = t2 - 65536;
+		//if(t2>32768) t2 = t2 - 65536;
 		t2 = t2/1000;
 		var dt = y.toString() + '-' + (m<10?'0':'') + m.toString() + '-' + (d<10?'0':'') + d.toString();
 		var tm = (h<10?'0':'') + h.toString() + ':' + (n<10?'0':'') + n.toString() + ':' + (s<10?'0':'') + s.toString();

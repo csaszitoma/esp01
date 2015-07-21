@@ -29,20 +29,27 @@ function recordStart()
     if _debug then print("#start", dofile("ntp.lc").time()) end
     h, m, s = dofile("ntp.lc").get()
     if m % _cfg["rec"] == 0 then
+-- ntpSync do not work in this function :-(
 --	ntpSync()
-	dofile("ds18.lc").temp(function(r)
-	    _addr = {}
-	    _temp = {}
-	    for k, v in pairs(r) do 
-		_addr[#_addr+1] = k
-		_temp[#_temp+1] = v
-	    end
-	    if #_temp<2 then
-		_addr[2] = _addr[1]
-		_temp[2] = _temp[1]
-	    end
-	    dofile("http.lc").post(_ee-1536)
-	end)
+-- DS18B20 version
+--	dofile("ds18.lc").temp(function(r)
+--	    _addr = {}
+--	    _temp = {}
+--	    for k, v in pairs(r) do 
+--		_addr[#_addr+1] = k
+--		_temp[#_temp+1] = v
+--	    end
+--	    if #_temp<2 then
+--		_addr[2] = _addr[1]
+--		_temp[2] = _temp[1]
+--	    end
+--	    dofile("http.lc").post(_ee-1536)
+--	end)
+-- end DS18B20 version
+-- DHT-11 DHT-22 version
+	_temp[1], _temp[2] = dofile("dht.lc").read(4)
+--	_addr[1] = "DHT11-T-" .. node.chipid()
+--	_addr[2] = "DHT11-H-" .. node.chipid()
 	tmr.alarm(2, 3000, 0, recordData)
     end
     -- time to next record date
@@ -86,3 +93,7 @@ tmr.alarm(2, 5000, 0, recordStart)
 tmr.alarm(0, 2147484, 1, ntpSync)
 -- led
 pwm.setclock(3, 1)
+-- initial values
+_temp[1], _temp[2] = dofile("dht.lc").read(4)
+_addr[1] = "DHT11-T-" .. node.chipid()
+_addr[2] = "DHT11-H-" .. node.chipid()

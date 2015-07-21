@@ -98,9 +98,9 @@ local function chunkRead(a, len)
     e = read(a, 8)
     while a < len and e:byte(1) ~= 0xFF do
 	local t1 = e:byte(5)*256 + e:byte(6) + 50
-	if t1 > 32767 then t1 = t1 - 65536 end
+--	if t1 > 32767 then t1 = t1 - 65536 end
 	local t2 = e:byte(7)*256 + e:byte(8) + 50
-	if t2 > 32767 then t2 = t2 - 65536 end
+--	if t2 > 32767 then t2 = t2 - 65536 end
 	local h, n, s, y, m, d = unpackDate(e)
 	r = r .. string.format("%d-%02d-%02d;%02d:%02d:%02d;%d.%d;%d.%d\n", 
 	    y, m, d, h, n, s, t1/1000, t1%1000/100, t2/1000, t2%1000/100)
