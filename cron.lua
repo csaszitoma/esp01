@@ -18,7 +18,7 @@ function recordData()
     -- wait time
     pwm.setduty(3, 16)
     if _cfg["slp"] > 0 or wifi.sta.status() ~= 5 then
-	tmr.alarm(1, 1000, 0, node.restart)
+	tmr.alarm(0, 3000, 0, node.restart)
     end
 end
 
@@ -43,10 +43,10 @@ function recordStart()
 	    end
 	    dofile("http.lc").post(_ee-1536)
 	end)
-	tmr.alarm(2, 1000, 0, function() recordData() end)
+	tmr.alarm(2, 3000, 0, recordData)
     end
     -- time to next record date
-    tmr.alarm(1, (60-s)*1000, 0, recordStart)
+    tmr.alarm(1, (60-s)*1000+100, 0, recordStart)
     pwm.setduty(3, 16)
 end
 
@@ -54,6 +54,7 @@ end
 --ntpSync = nil
 function ntpSync()
     if wifi.sta.status() ~= 5 then
+	if _debug then print("#ntp tmr") end
 	tmr.alarm(4, 3000, 0, ntpSync)
 	return
     end
@@ -73,6 +74,7 @@ function ntpSync()
 	    _start = utc - tmr.now()/1000000
 	end
 	sk:close()
+	if _debug then print("#ntp sync", utc, _start) end
     end)
     sk:connect(123, _cfg["ntpserver"])
     sk:send(request)
@@ -81,5 +83,6 @@ end
 ntpSync()
 -- wait for synchronization 
 tmr.alarm(2, 5000, 0, recordStart)
+tmr.alarm(0, 2147484, 1, ntpSync)
 -- led
 pwm.setclock(3, 1)

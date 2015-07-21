@@ -32,7 +32,9 @@ local function post(a)
     socket:on("receive", function(sck, response)
 	sck:close()
 	-- response commands
-	dofile("config.lc").decode(response)
+	if string.find(response, "\?") then
+	    dofile("config.lc").decode(response)
+	end
     end)
     socket:connect(80, _cfg["host"])
 end
